@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/pet_mall?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: 2
+
+server:
+  port: 8080
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
+
+pet:
+  jwt:
+    admin-secret-key: ${PET_JWT_ADMIN_SECRET_KEY:}
+    admin-ttl: 72000000
+    admin-token-name: token
+    user-secret-key: ${PET_JWT_USER_SECRET_KEY:}
+    user-ttl: 72000000
+    user-token-name: authorization
+  alioss:
+    endpoint: ${PET_ALIOSS_ENDPOINT:}
+    access-key-id: ${PET_ALIOSS_ACCESS_KEY_ID:}
+    access-key-secret: ${PET_ALIOSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${PET_ALIOSS_BUCKET_NAME:}
+

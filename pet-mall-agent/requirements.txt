@@ -1,0 +1,11 @@
+dashscope==1.25.18
+fastapi==0.136.1
+langchain==1.3.1
+langchain-chroma==1.1.0
+langchain-community==0.4.1
+langchain-text-splitters==1.1.2
+PyMySQL==1.2.0
+PyYAML==6.0.3
+redis==7.4.0
+SQLAlchemy==2.0.49
+uvicorn==0.47.0

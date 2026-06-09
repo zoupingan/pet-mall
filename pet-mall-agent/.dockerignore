@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+.idea/
+.git/
+logs/
+*.log
+.env
+.venv/
+venv/
+chroma_db/
+agent/chroma_db/

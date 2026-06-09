@@ -1,0 +1,38 @@
+# IDE
+**/.idea/
+**/.vscode/
+*.iml
+
+# Java
+**/target/
+*.jar
+
+# Node
+**/node_modules/
+**/dist/
+**/coverage/
+*.tsbuildinfo
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+
+# Runtime data
+**/logs/
+**/*.log
+pet-mall-agent/chroma_db/
+pet-mall-agent/rag/chroma_db/
+
+# Local secrets
+**/.env
+**/.env.local
+**/.env.*.local
+pet-admin/src/main/resources/application.yml
+
+# Archives
+*.tar.gz
+*.zip
+

@@ -1,0 +1,96 @@
+:root {
+  --pet-bg: #f7f4ef;
+  --pet-surface: #fffdf8;
+  --pet-surface-strong: #ffffff;
+  --pet-ink: #25231f;
+  --pet-muted: #74706a;
+  --pet-soft: #e9e1d6;
+  --pet-line: rgba(70, 60, 48, 0.12);
+  --pet-accent: #d96f3d;
+  --pet-accent-dark: #a84f2d;
+  --pet-accent-soft: #fff0e6;
+  --pet-green: #5f8b68;
+  --pet-shadow: 0 18px 45px rgba(82, 62, 39, 0.08);
+  --pet-shadow-hover: 0 26px 70px rgba(82, 62, 39, 0.14);
+  --pet-radius: 8px;
+  --pet-container: min(1400px, calc(100vw - 48px));
+  --el-color-primary: #d96f3d;
+  --el-color-primary-light-3: #e59672;
+  --el-color-primary-light-5: #efb79d;
+  --el-color-primary-light-7: #f6d2c2;
+  --el-color-primary-light-8: #fae1d6;
+  --el-color-primary-light-9: #fff0e6;
+  --el-color-primary-dark-2: #a84f2d;
+  --el-border-radius-base: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--pet-bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(217, 111, 61, 0.12), transparent 30rem),
+    radial-gradient(circle at 86% 10%, rgba(95, 139, 104, 0.11), transparent 28rem),
+    var(--pet-bg);
+  color: var(--pet-ink);
+  font-family: Outfit, "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.pet-page-shell {
+  width: var(--pet-container);
+  margin: 0 auto;
+}
+
+.pet-button-reset {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.el-button {
+  font-weight: 700;
+}
+
+.el-button--primary,
+.el-button--warning {
+  --el-button-bg-color: var(--pet-accent);
+  --el-button-border-color: var(--pet-accent);
+  --el-button-hover-bg-color: var(--pet-accent-dark);
+  --el-button-hover-border-color: var(--pet-accent-dark);
+  --el-button-active-bg-color: var(--pet-accent-dark);
+  --el-button-active-border-color: var(--pet-accent-dark);
+}
+
+.el-tag {
+  border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --pet-container: min(100vw - 32px, 1400px);
+  }
+}
