@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 
@@ -30,15 +32,51 @@ class RagSummarizeService:
     #   获取参考资料
     def rag_summarize(self, query: str, history:str = None):
         retriever_doc = self.retriever_doc(query)
+        if not retriever_doc:
+            return "知识库中暂未找到与该问题相关的资料。", []
+
         content = ""
         count = 0
         for doc in retriever_doc:
             count += 1
-            content += f"[参考资料{count}]:{doc.page_content}|参考元数据{doc.metadata}"
-        return self.chain.invoke({"context": content, "input": query, "history": history})
+            content += (
+                f"\n\n===== 参考资料 {count} =====\n"
+                f"{doc.page_content}\n"
+                f"来源：{doc.metadata.get('source', '未知')}"
+            )
+
+
+        answer = self.chain.invoke({
+            "context": content,
+            "input": query,
+            "history": history,
+        })
+
+        sources = sorted({
+            Path(doc.metadata["source"]).name
+            for doc in retriever_doc
+            if doc.metadata.get("source")
+        })
+
+        return answer, sources
 
 
 if __name__ == '__main__':
-    rag_summarize_service = RagSummarizeService()
-    res = rag_summarize_service.rag_summarize("皇家猫粮多少钱")
-    print(res)
+    service = VectorStoreService()
+    queries = [
+        "皇家K36幼猫粮适合多大的猫？",
+        "皇家K36幼猫粮现在多少钱？",
+        "皇家K36幼猫粮还有库存吗？"
+    ]
+
+    retriever = service.get_retriever()
+
+    for query in queries:
+        print(f"\n\n######## {query} ########")
+
+        documents = retriever.invoke(query)
+
+        print("通过阈值的数量：", len(documents))
+
+        for index, document in enumerate(documents, start=1):
+            print(f"{index}. {document.page_content}")

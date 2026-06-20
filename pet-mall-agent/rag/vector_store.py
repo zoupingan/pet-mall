@@ -12,12 +12,12 @@ from utils.logger_hanlder import logger
 from utils.path_tool import get_abs_path
 
 
-#向量存储/检索服务
+# 向量存储/检索服务
 class VectorStoreService:
     def __init__(self):
         self.vector_store = Chroma(
             collection_name=chroma_config["collection_name"],
-            persist_directory=chroma_config["persist_directory"],
+            persist_directory=get_abs_path(chroma_config["persist_directory"]),
             embedding_function=embedding_model
         )
         self.spliter = RecursiveCharacterTextSplitter(
@@ -28,7 +28,12 @@ class VectorStoreService:
         )
 
     def get_retriever(self):
-        return self.vector_store.as_retriever(search_kwargs={"k": chroma_config["k"]})
+        return self.vector_store.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={
+                "k": chroma_config["k"],
+                "score_threshold": chroma_config["score_threshold"],
+            }, )
 
     def load_document(self):
         # 从数据文件夹中加载数据文件，转为向量存入向量数据库,需要计算md5值去重
@@ -79,10 +84,11 @@ class VectorStoreService:
                 logger.error(f"加载文件{path}失败，错误信息：{str(e)}")
                 continue
 
+
 if __name__ == '__main__':
     vs = VectorStoreService()
     vs.load_document()
-    retriever = vs.get_retriever()
-    res = retriever.invoke("皇家K36幼猫粮多少钱")
-    for i in res:
-        print(i.page_content)
+    # retriever = vs.get_retriever()
+    # res = retriever.invoke("皇家K36幼猫粮多少钱")
+    # for i in res:
+    #     print(i.page_content)

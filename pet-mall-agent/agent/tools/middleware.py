@@ -21,11 +21,3 @@ def log_before_model(state,runtime):     #模型执行前输出日志
     logger.info(f"[log_before_model]即将调用模型，带有{len(state['messages'])}条消息")
     logger.debug(f"[log_before_model]消息内容：{state['messages'][-1].content.strip()}")
     return None
-
-@dynamic_prompt                 #每一次在生成提示词之前调用此函数
-def report_prompt_switch(request):     #动态切换提示词
-    is_report = request.runtime.context.get('report',False)     #拿不到就返回false
-    if is_report:
-        print("**"*30)
-        return load_report_prompt()
-    return load_system_prompt()

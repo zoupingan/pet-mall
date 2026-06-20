@@ -1,0 +1,84 @@
+{
+  "dataset_name": "pet-mall-agent-basic-eval",
+  "description": "宠物商城 Agent 的基础人工评测集。每条用独立 session_id 运行。",
+  "cases": [
+    {
+      "id": "rag-001",
+      "question": "皇家K36适合多大的猫？",
+      "expected_route": "rag",
+      "expected_tools": ["rag_summarize"],
+      "required_facts": ["4-12个月", "离乳期幼猫"],
+      "forbidden_facts": ["适合所有年龄", "适合成猫"],
+      "expected_sources": ["pet_mall_user_faq.txt"]
+    },
+    {
+      "id": "rag-002",
+      "question": "忘记密码怎么办？",
+      "expected_route": "rag",
+      "expected_tools": ["rag_summarize"],
+      "required_facts": ["登录页面", "忘记密码", "注册手机号", "验证码"],
+      "forbidden_facts": ["邮箱重置", "人工直接修改密码"],
+      "expected_sources": ["pet_mall_user_faq.txt"]
+    },
+    {
+      "id": "rag-003",
+      "question": "退款通常多久到账？",
+      "expected_route": "rag",
+      "expected_tools": ["rag_summarize"],
+      "required_facts": ["1-7个工作日", "原路返回"],
+      "forbidden_facts": ["3-7个工作日", "5-15个工作日"],
+      "expected_sources": ["pet_mall_order_issues.txt"]
+    },
+    {
+      "id": "tool-001",
+      "question": "皇家K36现在多少钱？",
+      "expected_route": "database_tool",
+      "expected_tools": ["get_product_price_stock"],
+      "required_facts": ["皇家K36", "价格"],
+      "forbidden_facts": ["仅根据知识库报价"],
+      "expected_sources": []
+    },
+    {
+      "id": "tool-002",
+      "question": "皇家K36还有库存吗？",
+      "expected_route": "database_tool",
+      "expected_tools": ["get_product_price_stock"],
+      "required_facts": ["皇家K36", "库存", "上架"],
+      "forbidden_facts": ["复用历史库存"],
+      "expected_sources": []
+    },
+    {
+      "id": "tool-003",
+      "question": "我的最近订单是什么？",
+      "expected_route": "database_tool_chain",
+      "expected_tools": ["get_user_id", "get_user_order_status"],
+      "required_facts": ["订单号", "金额", "状态", "下单时间"],
+      "forbidden_facts": ["编造用户ID", "复用历史用户ID"],
+      "expected_sources": []
+    },
+    {
+      "id": "mixed-001",
+      "question": "推荐一款适合幼猫并且现在有货的猫粮。",
+      "expected_route": "rag_and_database_tool",
+      "expected_tools": ["rag_summarize", "search_products_by_category"],
+      "required_facts": ["适用年龄", "当前在售商品", "库存"],
+      "forbidden_facts": ["推荐数据库中不存在的商品", "编造营养功效"],
+      "expected_sources": ["pet_mall_user_faq.txt"]
+    },
+    {
+      "id": "fallback-001",
+      "question": "我的电脑蓝屏了怎么办？",
+      "expected_route": "out_of_scope",
+      "expected_tools": [],
+      "required_facts": ["无法提供电脑技术支持"],
+      "forbidden_facts": ["提供蓝屏排查步骤", "调用商城工具"],
+      "expected_sources": []
+    }
+  ],
+  "manual_scoring": {
+    "route_pass": "实际工具调用顺序与 expected_tools 一致。",
+    "facts_pass": "回答包含 required_facts，且不包含 forbidden_facts。",
+    "source_pass": "RAG 工具 artifact 中的来源与 expected_sources 一致。",
+    "case_pass": "route_pass、facts_pass、source_pass 全部通过。"
+  }
+}
