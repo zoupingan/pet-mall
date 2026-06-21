@@ -20,8 +20,8 @@ public class AgentServiceImpl implements AgentService {
 
     @Override
     public String get(AgentDTO agentDTO) {
-        // String fastApiUrl = "http://localhost:8000/agent/stream";
-        String fastApiUrl = "http://agent:8000/agent/stream";
+         String fastApiUrl = "http://localhost:8000/agent/stream";
+//        String fastApiUrl = "http://agent:8000/agent/stream";
         try {
             String url = fastApiUrl + "?query=" + agentDTO.getQuery() +
                     "&session_id=" + agentDTO.getSessionId() +

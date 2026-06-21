@@ -1,20 +1,31 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query,Request
 
-from agent.react_agent import ReactAgent
+from agent.async_react_agent import AsyncReactAgent
 
 router = APIRouter(prefix="/agent")
 
 
 @router.get("/stream")
 async def chat(
-    query: str,
-    session_id: str | None = None,
-    user_id: int | None = Query(None),
+        request: Request,
+        query: str,
+        session_id: str | None = None,
+        user_id: int | None = Query(None),
 ):
-    agent = ReactAgent()
-    stream = agent.execute_stream(query, session_id, user_id)
-    result = "".join(chunk for chunk in stream)
+    agent: AsyncReactAgent = request.app.state.agent
+
+    response_parts = []
+
+    async for chunk in agent.execute_stream(
+            query=query,
+            session_id=session_id,
+            user_id=user_id,
+    ):
+        response_parts.append(chunk)
+
+    result = "".join(response_parts)
 
     if result.startswith(query):
         result = result[len(query):]
+
     return result
