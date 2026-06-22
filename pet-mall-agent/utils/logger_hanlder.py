@@ -5,7 +5,7 @@ from datetime import datetime
 from utils.path_tool import get_abs_path
 
 # 日志保存路径
-LOG_ROOT = get_abs_path("logs")
+LOG_ROOT = get_abs_path("storage/logs")
 # exist_ok表示如果日志存在就啥事不干，没有则创建
 os.makedirs(LOG_ROOT, exist_ok=True)
 

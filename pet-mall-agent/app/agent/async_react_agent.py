@@ -1,30 +1,28 @@
 from pathlib import Path
+from time import perf_counter
 from uuid import uuid4
 
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-from agent.tools.agent_tools import (
+from app.agent.tools.agent_tools import (
     clear_request_user_id,
     get_user_id,
-    get_user_order_status,
-    get_user_orders,
     rag_summarize,
-    search_products_by_brand,
-    search_products_by_category,
     set_request_user_id,
 )
-from agent.tools.middleware import (
+from app.agent.tools.middleware import (
     async_monitor_tool,
-    log_before_model,
+    async_monitor_model,
 )
 from config.redis_config import (
     add_session_message,
     get_session_history,
 )
-from model.factory import chat_model
+from app.llm.factory import chat_model
 from utils.logger_hanlder import logger
 from utils.prompt_loader import load_system_prompt
+from utils.trace_context import start_trace, clear_trace
 
 
 class AsyncReactAgent:
@@ -35,47 +33,38 @@ class AsyncReactAgent:
     @classmethod
     async def create(cls):
         instance = cls()
-        project_root = Path(__file__).resolve().parents[1]
+        project_root = Path(__file__).resolve().parents[2]
 
         instance.mcp_client = MultiServerMCPClient(
             {
                 "pet_product": {
                     "transport": "stdio",
-                    "command": (
-                        r"C:\venvs\pet-mall-agent\Scripts\python.exe"
-                    ),
-                    "args": [
-                        "-m",
-                        "mcp_server.product_server",
-                    ],
+                    "command": r"C:\venvs\pet-mall-agent\Scripts\python.exe",
+                    "args": ["-m","app.mcp.mcp_server.product_server",],
                     "cwd": str(project_root),
-                }
+                },
+                "pet_order": {
+                    "transport": "stdio",
+                    "command": r"C:\venvs\pet-mall-agent\Scripts\python.exe",
+                    "args": ["-m", "app.mcp.mcp_server.order_server"],
+                    "cwd": str(project_root),
+                },
             }
         )
 
         mcp_tools = await instance.mcp_client.get_tools()
-
-        product_mcp_tool = next(
-            tool
-            for tool in mcp_tools
-            if tool.name == "get_product_price_stock"
-        )
 
         instance.agent = create_agent(
             model=chat_model,
             system_prompt=load_system_prompt(),
             middleware=[
                 async_monitor_tool,
-                log_before_model,
+                async_monitor_model,
             ],
             tools=[
                 rag_summarize,
                 get_user_id,
-                get_user_orders,
-                search_products_by_brand,
-                product_mcp_tool,
-                search_products_by_category,
-                get_user_order_status,
+                *mcp_tools
             ],
         )
 
@@ -87,6 +76,17 @@ class AsyncReactAgent:
             session_id: str | None = None,
             user_id: int | None = None,
     ):
+        #生成 trace_id, 并开启 trace
+        trace_id = uuid4().hex[:8]
+        state_token = start_trace(trace_id)
+        request_started_at = perf_counter()
+
+        logger.info(
+            f"[trace={trace_id}] 请求开始："
+            f"session_id={session_id}，user_id={user_id}，"
+            f"query={query!r}"
+        )
+
         rag_sources = set()
         messages = []
 
@@ -166,7 +166,15 @@ class AsyncReactAgent:
 
                         last_content = current_content
         finally:
+            elapsed = perf_counter() - request_started_at
+
+            logger.info(
+                f"[trace={trace_id}] 请求结束，"
+                f"总耗时={elapsed:.3f}秒"
+            )
+
             clear_request_user_id(user_id_token)
+            clear_trace(state_token)
 
         if session_id and full_response:
             if rag_sources:
@@ -183,14 +191,19 @@ class AsyncReactAgent:
 
 async def main():
     agent = await AsyncReactAgent.create()
-    session_id = f"mcp-agent-{uuid4().hex}"
 
-    async for chunk in agent.execute_stream(
-            query="皇家K36幼猫粮现在多少钱，还有货吗？",
-            session_id=session_id,
-            user_id=1,
-    ):
-        print(chunk, end="")
+
+    queries = ["忘记密码了怎么办"]
+
+    for query in queries:
+        session_id = f"mcp-agent-{uuid4().hex}"
+
+        async for chunk in agent.execute_stream(
+                query=query,
+                session_id=session_id,
+                user_id=1,
+        ):
+            print(chunk, end="")
 
 
 if __name__ == "__main__":

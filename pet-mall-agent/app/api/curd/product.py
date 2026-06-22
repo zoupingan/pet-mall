@@ -3,9 +3,9 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from orm_models.brand import Brand
-from orm_models.category import Category
-from orm_models.product import Product
+from app.db.orm_models.brand import Brand
+from app.db.orm_models.category import Category
+from app.db.orm_models.product import Product
 
 
 PRODUCT_SEARCH_WORDS = [

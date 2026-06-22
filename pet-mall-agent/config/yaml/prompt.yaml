@@ -1,0 +1,2 @@
+main_prompt_path: resource/prompt/main_prompt.txt
+rag_summarize_prompt_path: resource/prompt/rag_summarize.txt

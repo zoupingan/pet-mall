@@ -5,7 +5,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 
 async def main():
-    project_root = Path(__file__).resolve().parents[1]
+    project_root = Path(__file__).resolve().parents[3]
 
     client = MultiServerMCPClient(
         {
@@ -14,7 +14,7 @@ async def main():
                 "command": (
                     r"C:\venvs\pet-mall-agent\Scripts\python.exe"
                 ),
-                "args": ["-m", "mcp_server.product_server"],
+                "args": ["-m", "app.mcp.mcp_server.product_server"],
                 "cwd": str(project_root),
             }
         }

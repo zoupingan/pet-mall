@@ -6,12 +6,11 @@ from mcp.client.stdio import stdio_client
 
 
 async def main():
-    project_root = Path(__file__).resolve().parents[1]
-
+    project_root = Path(__file__).resolve().parents[3]
     server_params = StdioServerParameters(
         command=r"C:\venvs\pet-mall-agent\Scripts\python.exe",
-        args=["-m", "mcp_server.product_server"],
-        cwd=project_root,
+        args=["-m", "app.mcp.mcp_server.product_server"],
+        cwd=str(project_root),
     )
 
     async with stdio_client(server_params) as (read, write):

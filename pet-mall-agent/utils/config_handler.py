@@ -4,19 +4,19 @@ from yaml import FullLoader
 from utils.path_tool import get_abs_path
 
 
-def load_rag_config(config_path: str = get_abs_path("config/rag.yaml"), encoding: str = "utf-8"):
+def load_rag_config(config_path: str = get_abs_path("config/yaml/rag.yaml"), encoding: str = "utf-8"):
     with open(config_path, "r", encoding=encoding) as f:
         return yaml.load(f, Loader=FullLoader)
 
-def load_chroma_config(config_path: str = get_abs_path("config/chroma.yaml"), encoding: str = "utf-8"):
+def load_chroma_config(config_path: str = get_abs_path("config/yaml/chroma.yaml"), encoding: str = "utf-8"):
     with open(config_path, "r", encoding=encoding) as f:
         return yaml.load(f, Loader=FullLoader)
 
-def load_agent_config(config_path: str = get_abs_path("config/agent.yaml"), encoding: str = "utf-8"):
+def load_agent_config(config_path: str = get_abs_path("config/yaml/agent.yaml"), encoding: str = "utf-8"):
     with open(config_path, "r", encoding=encoding) as f:
         return yaml.load(f, Loader=FullLoader)
 
-def load_prompt_config(config_path: str = get_abs_path("config/prompt.yaml"), encoding: str = "utf-8"):
+def load_prompt_config(config_path: str = get_abs_path("config/yaml/prompt.yaml"), encoding: str = "utf-8"):
     with open(config_path, "r", encoding=encoding) as f:
         return yaml.load(f, Loader=FullLoader)
 
@@ -27,4 +27,4 @@ agent_config = load_agent_config()
 prompt_config = load_prompt_config()
 
 if __name__ == '__main__':
-    print(rag_config["model_name"])
+    print(rag_config["embedding_model_name"])

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query,Request
 
-from agent.async_react_agent import AsyncReactAgent
+from app.agent.async_react_agent import AsyncReactAgent
 
 router = APIRouter(prefix="/agent")
 

@@ -8,5 +8,5 @@ logs/
 .env
 .venv/
 venv/
-chroma_db/
-agent/chroma_db/
+storage/chroma_db/
+app/agent/chroma_db/

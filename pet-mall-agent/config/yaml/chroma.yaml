@@ -1,0 +1,13 @@
+collection_name: agent_static_v2
+persist_directory: storage/chroma_db
+k: 3
+data_path: resource/data
+md5_hex_store: md5_static_v2.txt
+
+chunk_size: 120
+chunk_overlap: 0
+
+score_threshold: 0.6
+
+allow_knowledge_file_type: ["txt"]
+separators: [ "\n\n", "\n", " ", "","?", "!", ".", "," ,"？", "！", "。", "，"]

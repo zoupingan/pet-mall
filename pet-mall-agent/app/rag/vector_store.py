@@ -3,7 +3,7 @@ import os.path
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
-from model.factory import embedding_model
+from app.llm.factory import embedding_model
 from utils.config_handler import chroma_config
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

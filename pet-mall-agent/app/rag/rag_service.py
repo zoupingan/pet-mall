@@ -1,10 +1,11 @@
+
 from pathlib import Path
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 
-from model.factory import chat_model
-from rag.vector_store import VectorStoreService
+from app.llm.factory import chat_model
+from app.rag.vector_store import VectorStoreService
 from utils.prompt_loader import load_rag_prompt
 
 
@@ -64,9 +65,7 @@ class RagSummarizeService:
 if __name__ == '__main__':
     service = VectorStoreService()
     queries = [
-        "皇家K36幼猫粮适合多大的猫？",
-        "皇家K36幼猫粮现在多少钱？",
-        "皇家K36幼猫粮还有库存吗？"
+        "忘记密码怎么办？",
     ]
 
     retriever = service.get_retriever()

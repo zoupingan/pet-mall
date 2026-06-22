@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from orm_models.orders import Orders
+from app.db.orm_models.orders import Orders
 
 
 def crud_get_orders_sync(db: Session, user_id: int | None = None):
