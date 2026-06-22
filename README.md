@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3">
   <img src="https://img.shields.io/badge/FastAPI-Agent-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/LangChain-RAG-1C3C3C?style=flat-square" alt="LangChain">
+  <img src="https://img.shields.io/badge/MCP-FastMCP-5A67D8?style=flat-square" alt="MCP">
   <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white" alt="MySQL">
   <img src="https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis">
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
@@ -29,7 +30,7 @@ PetMall 不只是一个商品 CRUD 项目。它覆盖了从商品浏览、购物
 | `pet-vue-user` | 用户端商城 | 商品浏览、购物车、订单、地址、AI 咨询 |
 | `pet-vue` | 运营管理端 | 商品、分类、品牌、订单、用户、轮播图管理 |
 | `pet-admin` | 核心业务后端 | 鉴权、商城业务、缓存、事务、库存并发控制 |
-| `pet-mall-agent` | AI 智能助手 | RAG 检索、工具调用、实时数据库查询、会话记忆 |
+| `pet-mall-agent` | AI 智能助手 | RAG 检索、MCP 工具服务、实时数据库查询、会话记忆与 Trace |
 
 ## 为什么值得看
 
@@ -67,7 +68,9 @@ PetMall 不只是一个商品 CRUD 项目。它覆盖了从商品浏览、购物
 - 按品牌或分类筛选当前在售商品；
 - 查询当前用户最近订单或指定订单状态；
 - 从 Chroma 向量库检索养宠知识与商城说明；
+- 通过商品、订单两个 FastMCP Server 标准化访问业务数据；
 - 使用 Redis 保存多轮历史会话，并在 24 小时后自动清理；
+- 使用请求级 Trace 记录模型调用、工具参数、来源与耗时；
 - 隐藏工具执行过程，仅向用户展示整理后的最终回答。
 
 ### 订单履约
@@ -103,6 +106,8 @@ flowchart LR
     N["Nginx<br/>静态资源与反向代理"]
     B["pet-admin<br/>Spring Boot"]
     G["pet-mall-agent<br/>FastAPI + LangChain"]
+    PM["商品 MCP Server<br/>3 Tools"]
+    OM["订单 MCP Server<br/>2 Tools"]
     M[("MySQL 8")]
     R[("Redis 7")]
     C[("Chroma")]
@@ -116,7 +121,10 @@ flowchart LR
     B --> R
     B --> O
     B --> G
-    G --> M
+    G --> PM
+    G --> OM
+    PM --> M
+    OM --> M
     G --> R
     G --> C
     G --> D
@@ -163,9 +171,9 @@ flowchart LR
     Q["用户自然语言问题"] --> L["大模型理解意图"]
     L --> T{"选择工具"}
     T -->|商城知识| V["Chroma RAG 检索"]
-    T -->|价格/库存| P["商品实时查询"]
-    T -->|品牌/分类| S["商品筛选"]
-    T -->|用户订单| O["订单状态查询"]
+    T -->|价格/库存| P["商品 MCP Tool"]
+    T -->|品牌/分类| S["商品 MCP Tool"]
+    T -->|用户订单| O["订单 MCP Tool"]
     V --> F["整合上下文"]
     P --> F
     S --> F
@@ -201,7 +209,68 @@ flowchart LR
 
 这种设计避免了把可能变化的价格和库存写死在提示词或向量库中。
 
-### 4. 工具参数由自然语言自动提取
+### 4. RAG 检索工程化优化
+
+项目没有停留在“把文档写入向量库”：
+
+- 将 FAQ 分片由 `chunk_size=200、chunk_overlap=20` 调整为 `120、0`；
+- 将固定 Top 5 改为 `k=3、score_threshold=0.6` 的相关性阈值检索；
+- 增加空检索兜底，避免模型脱离资料自由生成；
+- 将实时价格、库存和订单数据移出静态知识 Collection；
+- 使用 Tool Artifact 保存来源，来源用于日志与评测，不污染最终回答；
+- 建立 10 条独立 `session_id` 的评测集，覆盖 RAG、Tool、组合推荐和越界兜底。
+
+五个检索基准问题中，正确资料均排在第一位，`Hit@1` 达到 **100%**；召回上下文由 15 条降至 8 条，减少约 **46.7%**。
+
+### 5. 商品与订单能力 MCP 服务化
+
+Agent 使用 `MultiServerMCPClient` 同时连接两个 FastMCP Server：
+
+```text
+商品 MCP Server
+├─ get_product_price_stock
+├─ search_products_by_brand
+└─ search_products_by_category
+
+订单 MCP Server
+├─ get_user_orders
+└─ get_user_order_status
+```
+
+完整调用链为：
+
+```text
+用户问题
+→ LLM Tool Call
+→ LangChain MCP Adapter
+→ FastMCP Server
+→ SQLAlchemy / MySQL
+→ ToolMessage
+→ 最终回答
+```
+
+MCP 工具包含参数校验、空结果处理和异常处理，并可通过 Inspector、原生 Python Client 与 LangChain Agent 分层验证。
+
+### 6. 异步 Agent 与请求级 Trace
+
+- 使用 `AsyncReactAgent` 和 `agent.astream()` 执行异步调用链；
+- 使用 FastAPI `lifespan` 在服务启动时初始化并复用唯一 Agent；
+- 使用 `ContextVar + TraceState` 为每次请求生成独立 `trace_id`；
+- 记录模型调用序号、消息数、工具名、工具参数、模型/工具耗时及请求总耗时；
+- 使用 Redis 保存多轮历史，并通过请求上下文传递当前用户 ID。
+
+一次订单查询可观察到：
+
+```text
+模型调用 1
+→ get_user_id
+→ 模型调用 2
+→ MCP get_user_orders
+→ 模型调用 3
+→ 最终回答
+```
+
+### 7. 工具参数由自然语言自动提取
 
 例如用户输入：
 
@@ -219,13 +288,13 @@ Agent 会选择商品价格库存工具，并构造：
 
 后端再使用关键词拆分与 SQL `LIKE` 条件完成模糊查询，使不完整商品名也能命中真实商品。
 
-### 5. 用户端与运营端职责分离
+### 8. 用户端与运营端职责分离
 
 - 用户端关注商品发现、购买和订单履约；
 - 管理端关注商品资料、库存、分类、品牌和订单状态；
 - 两端共享统一后端接口与认证体系，但拥有独立路由和页面结构。
 
-### 6. 容器化多服务部署
+### 9. 容器化多服务部署
 
 生产环境通过 Docker Compose 编排：
 
@@ -266,7 +335,7 @@ Agent 会选择商品价格库存工具，并构造：
 | 数据存储 | MySQL 8、Redis 7、Chroma |
 | 用户端 | Vue 3、Vite、Element Plus、Pinia、Vue Router、GSAP |
 | 管理端 | Vue 3、TypeScript、Vite、Element Plus、ECharts |
-| AI 服务 | Python 3.11、FastAPI、LangChain、SQLAlchemy、DashScope |
+| AI 服务 | Python 3.11、FastAPI、LangChain、FastMCP、SQLAlchemy、DashScope |
 | 工程部署 | Maven、Nginx、Docker、Docker Compose |
 
 ## 目录结构
@@ -276,7 +345,17 @@ pet-mall/
 ├── pet-admin/              # Spring Boot 核心业务后端
 ├── pet-vue/                # Vue 管理端
 ├── pet-vue-user/           # Vue 用户端
-├── pet-mall-agent/         # FastAPI + LangChain Agent
+├── pet-mall-agent/
+│   ├── app/
+│   │   ├── agent/          # Async Agent、Tools 与 Middleware
+│   │   ├── api/            # FastAPI 路由与数据库查询层
+│   │   ├── db/             # SQLAlchemy ORM
+│   │   ├── llm/            # 模型与 Embedding 工厂
+│   │   ├── mcp/            # 商品/订单 MCP Server 与测试 Client
+│   │   └── rag/            # RAG Service 与 Vector Store
+│   ├── config/             # YAML 与数据库、Redis 配置
+│   ├── resource/           # Prompt 与知识库原始资料
+│   └── storage/            # Chroma 数据与运行日志
 ├── docs/images/            # README 项目截图
 └── README.md
 ```
@@ -327,7 +406,7 @@ cd pet-mall-agent
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Agent 需要配置以下环境变量：
@@ -369,9 +448,10 @@ docker compose up -d
 ## 后续计划
 
 - [ ] 完善自动化测试与接口测试覆盖率
+- [ ] 为 10 条 Agent 评测集增加自动判分、平均耗时和 P95
+- [ ] 强化订单 MCP Server 的服务端用户身份校验
 - [ ] 引入消息队列处理订单异步任务
 - [ ] 增加商品收藏、评价和优惠券模块
-- [ ] 为 Agent 增加商品推荐与售后问答工具
 - [ ] 增加监控、健康检查和自动化部署流水线
 
 ## 项目说明
